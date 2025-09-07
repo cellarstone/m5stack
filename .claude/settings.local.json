@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sed:*)",
+      "WebSearch",
+      "Bash(for dir in 02_buttons 03_touch 04_speaker 05_microphone 06_imu_sensors 07_power_management 08_sd_card 09_rtc_time 10_multi_device)",
+      "Bash(done)",
+      "Bash(for:*)",
+      "Bash(do cp \"C:/Users/lukas/Projects/Github/cellarstone/m5stack/m5tab5/test_m5unified/01_hello_world/platformio.ini\" \"C:/Users/lukas/Projects/Github/cellarstone/m5stack/m5tab5/test_m5gfx/$dir/platformio.ini\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

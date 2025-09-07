@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:wiki.apolloautomation.com)",
+      "WebFetch(domain:sensirion.com)",
+      "WebFetch(domain:www.symmetryelectronics.com)",
+      "WebFetch(domain:emariete.com)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
