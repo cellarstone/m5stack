@@ -21,6 +21,21 @@
 
 #include <M5Unified.h>
 
+// Forward declarations
+void initializeSprites();
+void initializeObjects();
+void displayWelcome();
+void displayCurrentDemo();
+void drawTouchButtons();
+void drawCurrentSpriteDemo();
+void drawBasicSpritesDemo();
+void drawDoubleBufferDemo();
+void drawRotationScalingDemo();
+void drawTransparencyDemo();
+void drawSpriteAnimationDemo();
+void drawCollisionDetectionDemo();
+void updateAnimatedObjects();
+
 // Demo modes for different sprite features
 enum SpriteDemo {
     DEMO_BASIC_SPRITES,
@@ -93,30 +108,35 @@ void setup() {
 }
 
 void initializeSprites() {
-    // Basic sprite - 64x64 pixels
-    basicSprite.createSprite(64, 64);
+    // Basic sprite - 160x160 pixels (scaled for 1280x720)
+    basicSprite.createSprite(160, 160);
     basicSprite.fillScreen(TFT_BLACK);
     basicSprite.setTextColor(TFT_WHITE);
     basicSprite.setTextDatum(MC_DATUM);
-    basicSprite.drawString("SPRITE", 32, 32);
-    basicSprite.drawRect(0, 0, 64, 64, TFT_CYAN);
+    basicSprite.setTextSize(3);
+    basicSprite.drawString("SPRITE", 80, 80);
+    for (int i = 0; i < 3; i++) {
+        basicSprite.drawRect(i, i, 160-i*2, 160-i*2, TFT_CYAN);
+    }
     
     // Buffer sprite for double buffering - full screen size
     bufferSprite.createSprite(M5.Display.width(), M5.Display.height());
     
-    // Ball sprite - 32x32 pixels
-    ballSprite.createSprite(32, 32);
+    // Ball sprite - 80x80 pixels (scaled for 1280x720)
+    ballSprite.createSprite(80, 80);
     ballSprite.fillScreen(TFT_BLACK);
-    ballSprite.fillCircle(16, 16, 14, TFT_RED);
-    ballSprite.drawCircle(16, 16, 14, TFT_WHITE);
+    ballSprite.fillCircle(40, 40, 35, TFT_RED);
+    for (int i = 0; i < 3; i++) {
+        ballSprite.drawCircle(40, 40, 35 + i, TFT_WHITE);
+    }
     
-    // Player sprite - 48x32 pixels
-    playerSprite.createSprite(48, 32);
+    // Player sprite - 120x80 pixels (scaled for 1280x720)
+    playerSprite.createSprite(120, 80);
     playerSprite.fillScreen(TFT_BLACK);
-    // Draw simple spaceship
-    playerSprite.fillTriangle(40, 16, 8, 4, 8, 28, TFT_BLUE);
-    playerSprite.fillRect(8, 12, 16, 8, TFT_CYAN);
-    playerSprite.fillRect(0, 14, 8, 4, TFT_RED);
+    // Draw simple spaceship (scaled up)
+    playerSprite.fillTriangle(100, 40, 20, 10, 20, 70, TFT_BLUE);
+    playerSprite.fillRect(20, 30, 40, 20, TFT_CYAN);
+    playerSprite.fillRect(0, 35, 20, 10, TFT_RED);
 }
 
 void initializeObjects() {
@@ -136,50 +156,79 @@ void initializeObjects() {
 void displayWelcome() {
     M5.Display.fillScreen(TFT_BLACK);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.setTextSize(3);
+    M5.Display.setTextSize(6);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("M5GFX Sprites", M5.Display.width()/2, 40);
+    M5.Display.drawString("M5GFX Sprites", M5.Display.width()/2, 150);
     
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.drawString("Advanced", M5.Display.width()/2, 90);
-    M5.Display.drawString("Graphics", M5.Display.width()/2, 120);
+    M5.Display.drawString("Advanced", M5.Display.width()/2, 280);
+    M5.Display.drawString("Graphics", M5.Display.width()/2, 350);
     
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString("Learn sprite management and optimization", M5.Display.width()/2, 160);
+    M5.Display.drawString("Learn sprite management and optimization", M5.Display.width()/2, 450);
     
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("• Sprite Creation and Management", M5.Display.width()/2, 180);
-    M5.Display.drawString("• Double Buffering Techniques", M5.Display.width()/2, 195);
-    M5.Display.drawString("• Animation and Effects", M5.Display.width()/2, 210);
+    M5.Display.drawString("• Sprite Creation and Management", M5.Display.width()/2, 510);
+    M5.Display.drawString("• Double Buffering Techniques", M5.Display.width()/2, 560);
+    M5.Display.drawString("• Animation and Effects", M5.Display.width()/2, 610);
 }
 
 void displayCurrentDemo() {
     M5.Display.fillScreen(TFT_BLACK);
     
-    // Header
+    // Header - scaled for 1280x720
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("M5GFX Sprites", M5.Display.width()/2, 10);
+    M5.Display.drawString("M5GFX Sprites", M5.Display.width()/2, 30);
     
     // Current demo name
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.setTextSize(1);
-    M5.Display.drawString(spriteDemoNames[currentDemo], M5.Display.width()/2, 35);
+    M5.Display.setTextSize(3);
+    M5.Display.drawString(spriteDemoNames[currentDemo], M5.Display.width()/2, 90);
     
     // Demo counter
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(SPRITE_DEMO_COUNT), M5.Display.width()/2, 50);
+    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(SPRITE_DEMO_COUNT), M5.Display.width()/2, 130);
     
-    // Navigation hint
-    M5.Display.setTextColor(TFT_GREEN);
-    M5.Display.setTextDatum(BC_DATUM);
-    M5.Display.drawString("[A] Prev  [B] Reset  [C] Next", M5.Display.width()/2, M5.Display.height() - 10);
+    // Draw touch buttons
+    drawTouchButtons();
     
     // Draw demo-specific content
     drawCurrentSpriteDemo();
+}
+
+void drawTouchButtons() {
+    int btnWidth = 200;
+    int btnHeight = 60;
+    int btnY = M5.Display.height() - 80;
+    int spacing = 50;
+    int totalWidth = btnWidth * 3 + spacing * 2;
+    int startX = (M5.Display.width() - totalWidth) / 2;
+    
+    // Previous button
+    M5.Display.fillRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setTextSize(3);
+    M5.Display.setTextDatum(MC_DATUM);
+    M5.Display.drawString("< PREV", startX + btnWidth/2, btnY + btnHeight/2);
+    
+    // Reset/Toggle button
+    M5.Display.fillRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_NAVY);
+    M5.Display.drawRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_BLUE);
+    if (currentDemo == DEMO_DOUBLE_BUFFER) {
+        M5.Display.drawString("TOGGLE", startX + btnWidth + spacing + btnWidth/2, btnY + btnHeight/2);
+    } else {
+        M5.Display.drawString("RESET", startX + btnWidth + spacing + btnWidth/2, btnY + btnHeight/2);
+    }
+    
+    // Next button
+    M5.Display.fillRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.drawString("NEXT >", startX + (btnWidth + spacing) * 2 + btnWidth/2, btnY + btnHeight/2);
 }
 
 void drawCurrentSpriteDemo() {
@@ -206,49 +255,52 @@ void drawCurrentSpriteDemo() {
 }
 
 void drawBasicSpritesDemo() {
-    int startY = 70;
+    int startY = 180;  // Adjusted for header space
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextDatum(TL_DATUM);
-    M5.Display.drawString("Basic Sprite Operations", 10, startY);
+    M5.Display.drawString("Basic Sprite Operations", 50, startY);
     
     // Static sprite
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Static Sprite:", 10, startY + 20);
-    basicSprite.pushSprite(10, startY + 35);
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Static Sprite:", 50, startY + 60);
+    basicSprite.pushSprite(50, startY + 100);
     
     // Sprite info
-    M5.Display.drawString("Size: 64x64 pixels", 90, startY + 40);
-    M5.Display.drawString("Memory: " + String(basicSprite.width() * basicSprite.height() * 2) + " bytes", 90, startY + 55);
+    M5.Display.drawString("Size: 160x160 pixels", 250, startY + 120);
+    M5.Display.drawString("Memory: " + String(basicSprite.width() * basicSprite.height() * 2) + " bytes", 250, startY + 160);
     
-    // Moving sprite
-    M5.Display.drawString("Moving Sprite:", 10, startY + 110);
-    int moveX = 10 + (animationStep * 2) % (M5.Display.width() - 74);
-    basicSprite.pushSprite(moveX, startY + 125);
+    // Moving sprite - use full screen width
+    M5.Display.drawString("Moving Sprite:", 50, startY + 280);
+    int moveX = 50 + (animationStep * 8) % (M5.Display.width() - 210);
+    basicSprite.pushSprite(moveX, startY + 320);
     
-    // Sprite with different colors
-    M5.Display.drawString("Colored Sprites:", 10, startY + 200);
+    // Sprite with different colors - larger sprites
+    M5.Display.drawString("Colored Sprites:", 650, startY + 60);
     
-    // Create temporary colored sprites
+    // Create temporary colored sprites (larger)
     for (int i = 0; i < 4; i++) {
         LGFX_Sprite colorSprite(&M5.Display);
-        colorSprite.createSprite(20, 20);
+        colorSprite.createSprite(80, 80);
         
         uint16_t colors[] = {TFT_RED, TFT_GREEN, TFT_BLUE, TFT_YELLOW};
         colorSprite.fillScreen(TFT_BLACK);
-        colorSprite.fillRect(2, 2, 16, 16, colors[i]);
-        colorSprite.drawRect(0, 0, 20, 20, TFT_WHITE);
+        colorSprite.fillRect(5, 5, 70, 70, colors[i]);
+        colorSprite.drawRect(0, 0, 80, 80, TFT_WHITE);
+        colorSprite.drawRect(1, 1, 78, 78, TFT_WHITE);
         
-        colorSprite.pushSprite(10 + i * 25, startY + 215);
+        colorSprite.pushSprite(650 + i * 100, startY + 100);
         colorSprite.deleteSprite();
     }
     
     // Memory usage info
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString("Sprite Memory Management:", 150, startY + 200);
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Sprite Memory Management:", 650, startY + 280);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("• createSprite() allocates memory", 150, startY + 215);
-    M5.Display.drawString("• deleteSprite() frees memory", 150, startY + 230);
+    M5.Display.drawString("• createSprite() allocates memory", 650, startY + 320);
+    M5.Display.drawString("• deleteSprite() frees memory", 650, startY + 360);
     M5.Display.drawString("• pushSprite() displays to screen", 150, startY + 245);
 }
 
@@ -329,39 +381,42 @@ void drawDoubleBufferDemo() {
 }
 
 void drawRotationScalingDemo() {
-    int startY = 70;
+    int startY = 180;
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextDatum(TL_DATUM);
-    M5.Display.drawString("Sprite Rotation & Scaling", 10, startY);
+    M5.Display.drawString("Sprite Rotation & Scaling", 50, startY);
     
     // Rotating sprite
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Rotating Sprite:", 10, startY + 20);
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Rotating Sprite:", 50, startY + 60);
     
-    int centerX = 80, centerY = startY + 70;
-    ballSprite.setPivot(16, 16); // Set pivot to center of sprite
-    ballSprite.pushRotated(centerX, centerY, animationAngle);
+    int centerX = 200, centerY = startY + 180;
+    ballSprite.setPivot(ballSprite.width()/2, ballSprite.height()/2); // Set pivot to center of sprite
+    // Push rotated sprite to display
+    M5.Display.setPivot(centerX, centerY);
+    ballSprite.pushRotated(&M5.Display, animationAngle);
     
     // Scaling sprite
-    M5.Display.drawString("Scaling Sprite:", 10, startY + 120);
+    M5.Display.drawString("Scaling Sprite:", 50, startY + 320);
     
-    float scale = 0.5 + 0.5 * sin(animationAngle * PI / 180.0);
+    float scale = 0.5 + 1.0 * sin(animationAngle * PI / 180.0);
     int scaledWidth = ballSprite.width() * scale;
     int scaledHeight = ballSprite.height() * scale;
     
     // Note: pushRotateZoom combines rotation and scaling
-    ballSprite.pushRotateZoom(80, startY + 170, 0, scale, scale);
+    ballSprite.pushRotateZoom(200, startY + 420, 0, scale, scale);
     
     // Multiple transformations
-    M5.Display.drawString("Combined Transform:", 160, startY + 20);
+    M5.Display.drawString("Combined Transform:", 600, startY + 60);
     
-    for (int i = 0; i < 6; i++) {
-        float angle = (animationAngle + i * 60) * PI / 180.0;
-        float x = 220 + 40 * cos(angle);
-        float y = startY + 70 + 40 * sin(angle);
-        float rotAngle = animationAngle + i * 60;
-        float scaleVal = 0.3 + 0.3 * sin((animationAngle + i * 30) * PI / 180.0);
+    for (int i = 0; i < 8; i++) {
+        float angle = (animationAngle + i * 45) * PI / 180.0;
+        float x = 800 + 150 * cos(angle);
+        float y = startY + 250 + 150 * sin(angle);
+        float rotAngle = animationAngle + i * 45;
+        float scaleVal = 0.5 + 0.5 * sin((animationAngle + i * 30) * PI / 180.0);
         
         ballSprite.pushRotateZoom(x, y, rotAngle, scaleVal, scaleVal);
     }
@@ -476,7 +531,7 @@ void drawSpriteAnimationDemo() {
     }
     
     // Animation info panel
-    M5.Display.fillRect(10, startY + 20, 200, 60, TFT_DARKBLUE);
+    M5.Display.fillRect(10, startY + 20, 200, 60, TFT_NAVY);
     M5.Display.drawRect(10, startY + 20, 200, 60, TFT_CYAN);
     
     M5.Display.setTextColor(TFT_WHITE);
@@ -522,15 +577,15 @@ void updateAnimatedObjects() {
 }
 
 void drawCollisionDetectionDemo() {
-    int startY = 70;
+    int startY = 180;
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextDatum(TL_DATUM);
-    M5.Display.drawString("Collision Detection", 10, startY);
+    M5.Display.drawString("Collision Detection", 50, startY);
     
     // Player controlled sprite
     static int playerX = M5.Display.width() / 2;
-    static int playerY = M5.Display.height() - 80;
+    static int playerY = M5.Display.height() - 200;
     
     // Simple touch/button control
     M5.update();
@@ -545,10 +600,10 @@ void drawCollisionDetectionDemo() {
     // Draw player
     playerSprite.pushSprite(playerX - 24, playerY - 16);
     
-    // Draw collision targets
+    // Draw collision targets - spread across full screen
     static int targetCount = 6;
-    static float targetX[6] = {60, 120, 180, 240, 300, 360};
-    static float targetY[6] = {120, 140, 120, 140, 120, 140};
+    static float targetX[6] = {200, 400, 600, 800, 1000, 1100};
+    static float targetY[6] = {300, 400, 350, 450, 320, 380};
     static bool targetActive[6] = {true, true, true, true, true, true};
     static int collisionCount = 0;
     
@@ -562,7 +617,7 @@ void drawCollisionDetectionDemo() {
             float dy = playerY - targetY[i];
             float distance = sqrt(dx*dx + dy*dy);
             
-            if (distance < 30) {
+            if (distance < 60) {  // Larger collision radius for bigger sprites
                 targetActive[i] = false;
                 collisionCount++;
                 
@@ -576,10 +631,10 @@ void drawCollisionDetectionDemo() {
             } else {
                 // Draw target
                 uint16_t color = (distance < 50) ? TFT_RED : TFT_GREEN;
-                ballSprite.pushSprite(targetX[i] - 16, targetY[i] - 16, TFT_BLACK);
+                ballSprite.pushSprite(targetX[i] - 40, targetY[i] - 40, TFT_BLACK);
                 
                 // Draw collision radius indicator
-                M5.Display.drawCircle(targetX[i], targetY[i], 30, TFT_DARKGREY);
+                M5.Display.drawCircle(targetX[i], targetY[i], 60, TFT_DARKGREY);
             }
         }
     }
@@ -594,27 +649,70 @@ void drawCollisionDetectionDemo() {
     
     // Info panel
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Player Position: " + String(playerX) + "," + String(playerY), 10, startY + 20);
-    M5.Display.drawString("Targets Collected: " + String(collisionCount) + "/" + String(targetCount), 10, startY + 35);
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Player Position: " + String(playerX) + "," + String(playerY), 50, startY + 60);
+    M5.Display.drawString("Targets Collected: " + String(collisionCount) + "/" + String(targetCount), 50, startY + 100);
     
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString("Touch screen to move player", 10, startY + 55);
-    M5.Display.drawString("Collect all green targets!", 10, startY + 70);
+    M5.Display.drawString("Touch screen to move player", 50, startY + 140);
+    M5.Display.drawString("Collect all green targets!", 50, startY + 180);
     
     // Collision detection info
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.drawString("Collision Methods:", 200, startY + 20);
+    M5.Display.drawString("Collision Methods:", 700, startY + 60);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("• Distance-based (circles)", 200, startY + 35);
-    M5.Display.drawString("• Bounding box (rectangles)", 200, startY + 50);
-    M5.Display.drawString("• Pixel-perfect (advanced)", 200, startY + 65);
+    M5.Display.drawString("• Distance-based (circles)", 700, startY + 100);
+    M5.Display.drawString("• Bounding box (rectangles)", 700, startY + 140);
+    M5.Display.drawString("• Pixel-perfect (advanced)", 700, startY + 180);
 }
 
 void loop() {
     M5.update();
     frameStartTime = millis();
     
-    // Handle button presses
+    // Handle touch input
+    if (M5.Touch.isEnabled()) {
+        auto touch = M5.Touch.getDetail();
+        if (touch.wasPressed()) {
+            int btnWidth = 200;
+            int btnHeight = 60;
+            int btnY = M5.Display.height() - 80;
+            int spacing = 50;
+            int totalWidth = btnWidth * 3 + spacing * 2;
+            int startX = (M5.Display.width() - totalWidth) / 2;
+            
+            // Check which button was pressed
+            if (touch.y >= btnY && touch.y <= btnY + btnHeight) {
+                if (touch.x >= startX && touch.x <= startX + btnWidth) {
+                    // Previous button
+                    currentDemo = (SpriteDemo)((currentDemo - 1 + SPRITE_DEMO_COUNT) % SPRITE_DEMO_COUNT);
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + btnWidth + spacing && 
+                          touch.x <= startX + btnWidth + spacing + btnWidth) {
+                    // Reset/Toggle button
+                    if (currentDemo == DEMO_DOUBLE_BUFFER) {
+                        useDoubleBuffer = !useDoubleBuffer;
+                    } else {
+                        // Reset animation
+                        animationStep = 0;
+                        animationAngle = 0;
+                        initializeObjects();
+                    }
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + (btnWidth + spacing) * 2 && 
+                          touch.x <= startX + (btnWidth + spacing) * 2 + btnWidth) {
+                    // Next button
+                    currentDemo = (SpriteDemo)((currentDemo + 1) % SPRITE_DEMO_COUNT);
+                    displayCurrentDemo();
+                }
+            }
+            
+            // Handle collision detection demo touch
+            // Note: Touch handling for collision detection is done within drawCollisionDetectionDemo()
+        }
+    }
+    
+    // Also handle physical buttons if available
     if (M5.BtnA.wasPressed()) {
         currentDemo = (SpriteDemo)((currentDemo - 1 + SPRITE_DEMO_COUNT) % SPRITE_DEMO_COUNT);
         displayCurrentDemo();

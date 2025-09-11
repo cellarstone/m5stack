@@ -21,6 +21,18 @@
 
 #include <M5Unified.h>
 
+// Forward declarations
+void displayWelcome();
+void displayCurrentDemo();
+void drawTouchButtons();
+void drawCurrentImageDemo();
+void drawEmbeddedImagesDemo();
+void drawProceduralImagesDemo();
+void drawImageScalingDemo();
+void drawImageEffectsDemo();
+void drawImageManipulationDemo();
+void drawPerformanceTipsDemo();
+
 // Demo modes for different image features
 enum ImageDemo {
     DEMO_EMBEDDED_IMAGES,
@@ -97,50 +109,75 @@ void setup() {
 void displayWelcome() {
     M5.Display.fillScreen(TFT_BLACK);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.setTextSize(3);
+    M5.Display.setTextSize(6);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("M5GFX Images", M5.Display.width()/2, 40);
+    M5.Display.drawString("M5GFX Images", M5.Display.width()/2, 150);
     
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.drawString("Image", M5.Display.width()/2, 90);
-    M5.Display.drawString("Processing", M5.Display.width()/2, 120);
+    M5.Display.drawString("Image", M5.Display.width()/2, 280);
+    M5.Display.drawString("Processing", M5.Display.width()/2, 350);
     
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString("Master image loading, scaling, and effects", M5.Display.width()/2, 160);
+    M5.Display.drawString("Master image loading, scaling, and effects", M5.Display.width()/2, 450);
     
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("• Embedded and Dynamic Images", M5.Display.width()/2, 180);
-    M5.Display.drawString("• Scaling and Transformations", M5.Display.width()/2, 195);
-    M5.Display.drawString("• Effects and Filters", M5.Display.width()/2, 210);
+    M5.Display.drawString("• Embedded and Dynamic Images", M5.Display.width()/2, 510);
+    M5.Display.drawString("• Scaling and Transformations", M5.Display.width()/2, 560);
+    M5.Display.drawString("• Effects and Filters", M5.Display.width()/2, 610);
 }
 
 void displayCurrentDemo() {
     M5.Display.fillScreen(TFT_BLACK);
     
-    // Header
+    // Header - scaled for 1280x720
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("M5GFX Images", M5.Display.width()/2, 10);
+    M5.Display.drawString("M5GFX Images", M5.Display.width()/2, 30);
     
     // Current demo name
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.setTextSize(1);
-    M5.Display.drawString(imageDemoNames[currentDemo], M5.Display.width()/2, 35);
+    M5.Display.setTextSize(3);
+    M5.Display.drawString(imageDemoNames[currentDemo], M5.Display.width()/2, 90);
     
     // Demo counter
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(IMAGE_DEMO_COUNT), M5.Display.width()/2, 50);
+    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(IMAGE_DEMO_COUNT), M5.Display.width()/2, 130);
     
-    // Navigation hint
-    M5.Display.setTextColor(TFT_GREEN);
-    M5.Display.setTextDatum(BC_DATUM);
-    M5.Display.drawString("[A] Prev  [B] Reset  [C] Next", M5.Display.width()/2, M5.Display.height() - 10);
+    // Draw touch buttons
+    drawTouchButtons();
     
     // Draw demo-specific content
     drawCurrentImageDemo();
+}
+
+void drawTouchButtons() {
+    int btnWidth = 200;
+    int btnHeight = 60;
+    int btnY = M5.Display.height() - 80;
+    int spacing = 50;
+    int totalWidth = btnWidth * 3 + spacing * 2;
+    int startX = (M5.Display.width() - totalWidth) / 2;
+    
+    // Previous button
+    M5.Display.fillRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setTextSize(3);
+    M5.Display.setTextDatum(MC_DATUM);
+    M5.Display.drawString("< PREV", startX + btnWidth/2, btnY + btnHeight/2);
+    
+    // Reset button
+    M5.Display.fillRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_NAVY);
+    M5.Display.drawRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_BLUE);
+    M5.Display.drawString("RESET", startX + btnWidth + spacing + btnWidth/2, btnY + btnHeight/2);
+    
+    // Next button
+    M5.Display.fillRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.drawString("NEXT >", startX + (btnWidth + spacing) * 2 + btnWidth/2, btnY + btnHeight/2);
 }
 
 void drawCurrentImageDemo() {
@@ -749,7 +786,40 @@ void drawPerformanceTipsDemo() {
 void loop() {
     M5.update();
     
-    // Handle button presses
+    // Handle touch input
+    if (M5.Touch.isEnabled()) {
+        auto touch = M5.Touch.getDetail();
+        if (touch.wasPressed()) {
+            int btnWidth = 200;
+            int btnHeight = 60;
+            int btnY = M5.Display.height() - 80;
+            int spacing = 50;
+            int totalWidth = btnWidth * 3 + spacing * 2;
+            int startX = (M5.Display.width() - totalWidth) / 2;
+            
+            // Check which button was pressed
+            if (touch.y >= btnY && touch.y <= btnY + btnHeight) {
+                if (touch.x >= startX && touch.x <= startX + btnWidth) {
+                    // Previous button
+                    currentDemo = (ImageDemo)((currentDemo - 1 + IMAGE_DEMO_COUNT) % IMAGE_DEMO_COUNT);
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + btnWidth + spacing && 
+                          touch.x <= startX + btnWidth + spacing + btnWidth) {
+                    // Reset button
+                    animationStep = 0;
+                    animationAngle = 0;
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + (btnWidth + spacing) * 2 && 
+                          touch.x <= startX + (btnWidth + spacing) * 2 + btnWidth) {
+                    // Next button
+                    currentDemo = (ImageDemo)((currentDemo + 1) % IMAGE_DEMO_COUNT);
+                    displayCurrentDemo();
+                }
+            }
+        }
+    }
+    
+    // Also handle physical buttons if available
     if (M5.BtnA.wasPressed()) {
         currentDemo = (ImageDemo)((currentDemo - 1 + IMAGE_DEMO_COUNT) % IMAGE_DEMO_COUNT);
         displayCurrentDemo();

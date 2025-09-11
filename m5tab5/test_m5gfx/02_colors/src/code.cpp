@@ -60,26 +60,27 @@ uint16_t hsv2rgb(float h, float s, float v) {
 void drawRGBBasics() {
     M5.Display.setTextColor(TFT_WHITE);
     M5.Display.setTextDatum(TL_DATUM);
+    M5.Display.setTextSize(2);
     
-    // RGB component demonstration
-    M5.Display.drawString("RGB Components:", 10, 70);
+    // RGB component demonstration - scaled for 1280x720
+    M5.Display.drawString("RGB Components:", 50, 200);
     
     // Red gradient
-    M5.Display.drawString("R:", 10, 90);
-    for (int i = 0; i < 256; i += 2) {
-        M5.Display.drawLine(40 + i/2, 90, 40 + i/2, 110, M5.Display.color565(i, 0, 0));
+    M5.Display.drawString("R:", 50, 250);
+    for (int i = 0; i < 256; i++) {
+        M5.Display.fillRect(150 + i*3, 250, 3, 40, M5.Display.color565(i, 0, 0));
     }
     
     // Green gradient
-    M5.Display.drawString("G:", 10, 115);
-    for (int i = 0; i < 256; i += 2) {
-        M5.Display.drawLine(40 + i/2, 115, 40 + i/2, 135, M5.Display.color565(0, i, 0));
+    M5.Display.drawString("G:", 50, 310);
+    for (int i = 0; i < 256; i++) {
+        M5.Display.fillRect(150 + i*3, 310, 3, 40, M5.Display.color565(0, i, 0));
     }
     
     // Blue gradient
-    M5.Display.drawString("B:", 10, 140);
-    for (int i = 0; i < 256; i += 2) {
-        M5.Display.drawLine(40 + i/2, 140, 40 + i/2, 160, M5.Display.color565(0, 0, i));
+    M5.Display.drawString("B:", 50, 370);
+    for (int i = 0; i < 256; i++) {
+        M5.Display.fillRect(150 + i*3, 370, 3, 40, M5.Display.color565(0, 0, i));
     }
     
     // Color mixing
@@ -257,6 +258,9 @@ void drawTransparency() {
     }
 }
 
+// Forward declaration
+void drawInterface();
+
 void setup() {
     auto cfg = M5.config();
     M5.begin(cfg);
@@ -270,20 +274,20 @@ void setup() {
 void drawInterface() {
     M5.Display.fillScreen(TFT_BLACK);
     
-    // Header
+    // Header - scaled for 1280x720 display
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("Color Management", M5.Display.width()/2, 10);
+    M5.Display.drawString("Color Management", M5.Display.width()/2, 30);
     
     // Demo name
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString(demoNames[currentDemo], M5.Display.width()/2, 35);
+    M5.Display.drawString(demoNames[currentDemo], M5.Display.width()/2, 90);
     
     // Demo counter
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.drawString("Demo " + String(currentDemo + 1) + "/" + String(DEMO_COUNT), M5.Display.width()/2, 50);
+    M5.Display.drawString("Demo " + String(currentDemo + 1) + "/" + String(DEMO_COUNT), M5.Display.width()/2, 130);
     
     // Draw current demo
     switch(currentDemo) {
@@ -294,16 +298,38 @@ void drawInterface() {
         case DEMO_TRANSPARENCY: drawTransparency(); break;
     }
     
-    // Navigation
-    M5.Display.setTextColor(TFT_GREEN);
-    M5.Display.setTextDatum(BC_DATUM);
-    M5.Display.drawString("Touch to continue", M5.Display.width()/2, M5.Display.height() - 10);
+    // Touch button at bottom
+    int btnWidth = 300;
+    int btnHeight = 80;
+    int btnX = (M5.Display.width() - btnWidth) / 2;
+    int btnY = M5.Display.height() - 100;
+    
+    M5.Display.fillRoundRect(btnX, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(btnX, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setTextSize(3);
+    M5.Display.setTextDatum(MC_DATUM);
+    M5.Display.drawString("NEXT DEMO", btnX + btnWidth/2, btnY + btnHeight/2);
 }
 
 void loop() {
     M5.update();
     
-    if (M5.Touch.wasPressed() || M5.BtnA.wasPressed() || M5.BtnC.wasPressed()) {
+    // Check for touch input
+    if (M5.Touch.isEnabled()) {
+        auto touch = M5.Touch.getDetail();
+        if (touch.wasPressed()) {
+            currentDemo = (ColorDemo)((currentDemo + 1) % DEMO_COUNT);
+            drawInterface();
+            
+            if (M5.Speaker.isEnabled()) {
+                M5.Speaker.tone(1000, 50);
+            }
+        }
+    }
+    
+    // Also check physical buttons if available
+    if (M5.BtnA.wasPressed() || M5.BtnC.wasPressed()) {
         currentDemo = (ColorDemo)((currentDemo + 1) % DEMO_COUNT);
         drawInterface();
         

@@ -1,33 +1,6 @@
 #include <M5CoreInk.h>
 #include <SensirionI2CScd4x.h>
 #include <Preferences.h>
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-
-// WiFi Configuration - UPDATE THESE VALUES
-const char* ssid = "Cellarstone IoT";
-const char* password = "Cllrs123IoT456";
-
-// MQTT Configuration - UPDATE THESE VALUES
-const char* mqtt_server = "192.168.2.176";
-const int mqtt_port = 1883;
-const char* mqtt_user = "mqtt_user";
-const char* mqtt_password = "mqtt";
-
-// Device identification
-const char* device_name = "M5CoreInk_No_2";
-const char* device_id = "m5coreink_no_2";
-
-// MQTT clients
-WiFiClient wifiClient;
-PubSubClient mqttClient(wifiClient);
-
-// Network status
-bool wifiConnected = false;
-bool mqttConnected = false;
-unsigned long lastMqttPublish = 0;
-unsigned long lastMqttReconnect = 0;
 
 // M5CoreInk Port A (Grove) pins
 const int PortA_SDA = 32;  // Yellow wire
@@ -40,176 +13,6 @@ bool invertDisplay = false;  // Flag for visual update indicator
 bool calibrationMode = false;
 unsigned long calibrationStartTime = 0;
 const unsigned long CALIBRATION_DURATION = 15000;  // 15 seconds for testing (was 180000 for 3 minutes)
-
-// Sensor data for MQTT
-float lastTemperature = 0;
-float lastHumidity = 0;
-uint16_t lastCO2 = 0;
-
-void setupWiFi() {
-    Serial.println("Setting up WiFi...");
-    
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(ssid, password);
-    
-    int attempts = 0;
-    while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-        delay(500);
-        Serial.print(".");
-        attempts++;
-    }
-    
-    if (WiFi.status() == WL_CONNECTED) {
-        wifiConnected = true;
-        Serial.println("\nWiFi connected!");
-        Serial.print("IP address: ");
-        Serial.println(WiFi.localIP());
-    } else {
-        Serial.println("\nWiFi connection failed!");
-    }
-}
-
-void publishDiscovery() {
-    if (!mqttConnected) return;
-    
-    JsonDocument doc;
-    char topic[200];
-    char payload[1024];
-    char stateTopic[100];
-    char availTopic[100];
-    
-    // Prepare common topics
-    snprintf(stateTopic, sizeof(stateTopic), "homeassistant/sensor/%s/state", device_id);
-    snprintf(availTopic, sizeof(availTopic), "homeassistant/sensor/%s/availability", device_id);
-    
-    // Temperature sensor discovery
-    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_temperature/config", device_id);
-    doc.clear();
-    doc["name"] = "Temperature";
-    doc["device_class"] = "temperature";
-    doc["unit_of_measurement"] = "°C";
-    doc["state_topic"] = stateTopic;
-    doc["availability_topic"] = availTopic;
-    doc["value_template"] = "{{ value_json.temperature }}";
-    doc["unique_id"] = String(device_id) + "_temperature";
-    
-    JsonObject device = doc["device"].to<JsonObject>();
-    device["identifiers"][0] = device_id;
-    device["name"] = device_name;
-    device["model"] = "M5CoreInk";
-    device["manufacturer"] = "M5Stack";
-    
-    serializeJson(doc, payload);
-    if (mqttClient.publish(topic, payload, true)) {
-        Serial.printf("Published discovery: %s\n", topic);
-    }
-    delay(50);
-    
-    // Humidity sensor discovery
-    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_humidity/config", device_id);
-    doc.clear();
-    doc["name"] = "Humidity";
-    doc["device_class"] = "humidity";
-    doc["unit_of_measurement"] = "%";
-    doc["state_topic"] = stateTopic;
-    doc["availability_topic"] = availTopic;
-    doc["value_template"] = "{{ value_json.humidity }}";
-    doc["unique_id"] = String(device_id) + "_humidity";
-    
-    device = doc["device"].to<JsonObject>();
-    device["identifiers"][0] = device_id;
-    device["name"] = device_name;
-    device["model"] = "M5CoreInk";
-    device["manufacturer"] = "M5Stack";
-    
-    serializeJson(doc, payload);
-    if (mqttClient.publish(topic, payload, true)) {
-        Serial.printf("Published discovery: %s\n", topic);
-    }
-    delay(50);
-    
-    // CO2 sensor discovery
-    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s_co2/config", device_id);
-    doc.clear();
-    doc["name"] = "CO2";
-    doc["device_class"] = "carbon_dioxide";
-    doc["unit_of_measurement"] = "ppm";
-    doc["state_topic"] = stateTopic;
-    doc["availability_topic"] = availTopic;
-    doc["value_template"] = "{{ value_json.co2 }}";
-    doc["unique_id"] = String(device_id) + "_co2";
-    
-    device = doc["device"].to<JsonObject>();
-    device["identifiers"][0] = device_id;
-    device["name"] = device_name;
-    device["model"] = "M5CoreInk";
-    device["manufacturer"] = "M5Stack";
-    
-    serializeJson(doc, payload);
-    if (mqttClient.publish(topic, payload, true)) {
-        Serial.printf("Published discovery: %s\n", topic);
-    }
-}
-
-void connectMQTT() {
-    if (!wifiConnected || millis() - lastMqttReconnect < 5000) return;
-    
-    lastMqttReconnect = millis();
-    
-    Serial.printf("Connecting to MQTT broker %s:%d...", mqtt_server, mqtt_port);
-    String clientId = String(device_id) + "_" + String(random(0xffff), HEX);
-    
-    // Set last will message
-    char willTopic[100];
-    snprintf(willTopic, sizeof(willTopic), "homeassistant/sensor/%s/availability", device_id);
-    
-    bool connected = false;
-    if (strlen(mqtt_user) > 0) {
-        Serial.printf(" with auth (user: %s)...", mqtt_user);
-        connected = mqttClient.connect(clientId.c_str(), mqtt_user, mqtt_password, willTopic, 0, true, "offline");
-    } else {
-        Serial.print(" without auth...");
-        connected = mqttClient.connect(clientId.c_str(), willTopic, 0, true, "offline");
-    }
-    
-    if (connected) {
-        mqttConnected = true;
-        Serial.println(" connected!");
-        
-        // Publish availability
-        mqttClient.publish(willTopic, "online", true);
-        
-        // Small delay to ensure connection is stable
-        delay(100);
-        
-        // Publish discovery messages
-        publishDiscovery();
-    } else {
-        int state = mqttClient.state();
-        Serial.printf(" failed, rc=%d\n", state);
-    }
-}
-
-void publishSensorData() {
-    if (!mqttConnected || millis() - lastMqttPublish < 5000) return;
-    
-    lastMqttPublish = millis();
-    
-    JsonDocument doc;
-    doc["temperature"] = lastTemperature;
-    doc["humidity"] = lastHumidity;
-    doc["co2"] = lastCO2;
-    
-    char payload[256];
-    serializeJson(doc, payload);
-    
-    char topic[100];
-    snprintf(topic, sizeof(topic), "homeassistant/sensor/%s/state", device_id);
-    
-    if (mqttClient.publish(topic, payload)) {
-        Serial.printf("Published to %s: %s\n", topic, payload);
-    }
-}
 
 void performCalibration() {
     uint16_t error;
@@ -352,53 +155,11 @@ void setup() {
     } else {
         Serial.printf("Last calibration: %lu ms ago\n", millis() - lastCalib);
     }
-    
-    // Setup WiFi and MQTT
-    InkPageSprite.clear();
-    InkPageSprite.drawString(10, 50, "Connecting WiFi", &AsciiFont8x16);
-    InkPageSprite.pushSprite();
-    
-    setupWiFi();
-    
-    if (wifiConnected) {
-        InkPageSprite.clear();
-        InkPageSprite.drawString(10, 50, "WiFi Connected!", &AsciiFont8x16);
-        char ipStr[32];
-        snprintf(ipStr, sizeof(ipStr), "%s", WiFi.localIP().toString().c_str());
-        InkPageSprite.drawString(10, 70, ipStr, &AsciiFont8x16);
-        InkPageSprite.pushSprite();
-        
-        // Setup MQTT
-        mqttClient.setServer(mqtt_server, mqtt_port);
-        mqttClient.setBufferSize(1024);
-        connectMQTT();
-        
-        if (mqttConnected) {
-            InkPageSprite.drawString(10, 90, "MQTT Connected!", &AsciiFont8x16);
-        } else {
-            InkPageSprite.drawString(10, 90, "MQTT Failed", &AsciiFont8x16);
-        }
-    } else {
-        InkPageSprite.clear();
-        InkPageSprite.drawString(10, 50, "WiFi Failed", &AsciiFont8x16);
-        InkPageSprite.drawString(10, 70, "Offline Mode", &AsciiFont8x16);
-    }
-    InkPageSprite.pushSprite();
-    delay(2000);
 }
 
 void loop() {
     uint16_t error;
     char errorMessage[256];
-    
-    // Handle MQTT connection
-    if (wifiConnected) {
-        if (!mqttConnected) {
-            connectMQTT();
-        } else {
-            mqttClient.loop();
-        }
-    }
     
     // Check button for calibration mode
     M5.update();
@@ -513,14 +274,6 @@ void loop() {
         Serial.printf("Temperature: %.1f°C, Humidity: %.1f%%, CO2: %d ppm\n", 
                      temperature, humidity, co2);
         
-        // Store values for MQTT
-        lastTemperature = temperature;
-        lastHumidity = humidity;
-        lastCO2 = co2;
-        
-        // Publish to MQTT if connected
-        publishSensorData();
-        
         // Flash inverted display for visual update indicator
         if (invertDisplay) {
             // Show inverted (black background) briefly
@@ -566,14 +319,6 @@ void loop() {
         int co2X = 100 - (strlen(co2Str) * 24) / 2;  // Center in full width
         InkPageSprite.drawString(co2X, 130, co2Str, &AsciiFont24x48);
         InkPageSprite.drawString(75, 175, "ppm", &AsciiFont8x16);
-        
-        // Network status indicator (small at bottom)
-        if (mqttConnected) {
-            InkPageSprite.drawString(5, 185, "HA", &AsciiFont8x16);
-            InkPageSprite.fillCircle(25, 191, 3, 0);  // Connected dot
-        } else if (wifiConnected) {
-            InkPageSprite.drawString(5, 185, "WiFi", &AsciiFont8x16);
-        }
         
         InkPageSprite.pushSprite();
         

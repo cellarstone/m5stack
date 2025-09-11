@@ -22,6 +22,18 @@
 #include <M5Unified.h>
 #include <math.h>
 
+// Forward declarations
+void displayWelcome();
+void displayCurrentDemo();
+void drawTouchButtons();
+void drawCurrentTransformDemo();
+void drawRotationDemo();
+void drawScalingDemo();
+void drawTranslationDemo();
+void drawCombinedTransformsDemo();
+void draw3DProjectionDemo();
+void drawMatrixOperationsDemo();
+
 // Demo modes for different transformation features
 enum TransformDemo {
     DEMO_ROTATION,
@@ -92,51 +104,76 @@ void setup() {
 void displayWelcome() {
     M5.Display.fillScreen(TFT_BLACK);
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.setTextSize(3);
+    M5.Display.setTextSize(6);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("M5GFX", M5.Display.width()/2, 40);
-    M5.Display.drawString("Transforms", M5.Display.width()/2, 75);
+    M5.Display.drawString("M5GFX", M5.Display.width()/2, 150);
+    M5.Display.drawString("Transforms", M5.Display.width()/2, 230);
     
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.drawString("Coordinate", M5.Display.width()/2, 110);
-    M5.Display.drawString("Mathematics", M5.Display.width()/2, 135);
+    M5.Display.drawString("Coordinate", M5.Display.width()/2, 330);
+    M5.Display.drawString("Mathematics", M5.Display.width()/2, 390);
     
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.drawString("Master 2D/3D coordinate transformations", M5.Display.width()/2, 170);
+    M5.Display.drawString("Master 2D/3D coordinate transformations", M5.Display.width()/2, 480);
     
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("• Rotation, Scaling, Translation", M5.Display.width()/2, 190);
-    M5.Display.drawString("• Matrix Operations", M5.Display.width()/2, 205);
-    M5.Display.drawString("• 3D Projection Basics", M5.Display.width()/2, 220);
+    M5.Display.drawString("• Rotation, Scaling, Translation", M5.Display.width()/2, 540);
+    M5.Display.drawString("• Matrix Operations", M5.Display.width()/2, 590);
+    M5.Display.drawString("• 3D Projection Basics", M5.Display.width()/2, 640);
 }
 
 void displayCurrentDemo() {
     M5.Display.fillScreen(TFT_BLACK);
     
-    // Header
+    // Header - scaled for 1280x720
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(2);
+    M5.Display.setTextSize(4);
     M5.Display.setTextDatum(TC_DATUM);
-    M5.Display.drawString("Transformations", M5.Display.width()/2, 10);
+    M5.Display.drawString("Transformations", M5.Display.width()/2, 30);
     
     // Current demo name
     M5.Display.setTextColor(TFT_YELLOW);
-    M5.Display.setTextSize(1);
-    M5.Display.drawString(transformDemoNames[currentDemo], M5.Display.width()/2, 35);
+    M5.Display.setTextSize(3);
+    M5.Display.drawString(transformDemoNames[currentDemo], M5.Display.width()/2, 90);
     
     // Demo counter
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(TRANSFORM_DEMO_COUNT), M5.Display.width()/2, 50);
+    M5.Display.drawString("Demo " + String(currentDemo + 1) + " of " + String(TRANSFORM_DEMO_COUNT), M5.Display.width()/2, 130);
     
-    // Navigation hint
-    M5.Display.setTextColor(TFT_GREEN);
-    M5.Display.setTextDatum(BC_DATUM);
-    M5.Display.drawString("[A] Prev  [B] Reset  [C] Next", M5.Display.width()/2, M5.Display.height() - 10);
+    // Draw touch buttons
+    drawTouchButtons();
     
     // Draw demo-specific content
     drawCurrentTransformDemo();
+}
+
+void drawTouchButtons() {
+    int btnWidth = 200;
+    int btnHeight = 60;
+    int btnY = M5.Display.height() - 80;
+    int spacing = 50;
+    int totalWidth = btnWidth * 3 + spacing * 2;
+    int startX = (M5.Display.width() - totalWidth) / 2;
+    
+    // Previous button
+    M5.Display.fillRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.setTextColor(TFT_WHITE);
+    M5.Display.setTextSize(3);
+    M5.Display.setTextDatum(MC_DATUM);
+    M5.Display.drawString("< PREV", startX + btnWidth/2, btnY + btnHeight/2);
+    
+    // Reset button
+    M5.Display.fillRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_NAVY);
+    M5.Display.drawRoundRect(startX + btnWidth + spacing, btnY, btnWidth, btnHeight, 15, TFT_BLUE);
+    M5.Display.drawString("RESET", startX + btnWidth + spacing + btnWidth/2, btnY + btnHeight/2);
+    
+    // Next button
+    M5.Display.fillRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_DARKGREEN);
+    M5.Display.drawRoundRect(startX + (btnWidth + spacing) * 2, btnY, btnWidth, btnHeight, 15, TFT_GREEN);
+    M5.Display.drawString("NEXT >", startX + (btnWidth + spacing) * 2 + btnWidth/2, btnY + btnHeight/2);
 }
 
 void drawCurrentTransformDemo() {
@@ -186,28 +223,29 @@ Point2D scalePoint(Point2D point, float scaleX, float scaleY, Point2D origin) {
 }
 
 void drawRotationDemo() {
-    int startY = 70;
+    int startY = 180;  // Adjusted for header and 1280x720 display
     M5.Display.setTextColor(TFT_CYAN);
-    M5.Display.setTextSize(1);
+    M5.Display.setTextSize(3);
     M5.Display.setTextDatum(TL_DATUM);
-    M5.Display.drawString("Rotation Transformations", 10, startY);
+    M5.Display.drawString("Rotation Transformations", 50, startY);
     
     // Simple rotation around center
     M5.Display.setTextColor(TFT_WHITE);
-    M5.Display.drawString("Center Rotation:", 10, startY + 20);
+    M5.Display.setTextSize(2);
+    M5.Display.drawString("Center Rotation:", 50, startY + 60);
     
-    Point2D center = {80, startY + 70};
-    Point2D corners[4] = {{60, startY + 50}, {100, startY + 50}, {100, startY + 90}, {60, startY + 90}};
+    Point2D center = {200, startY + 180};
+    Point2D corners[4] = {{150, startY + 130}, {250, startY + 130}, {250, startY + 230}, {150, startY + 230}};
     
     // Draw coordinate axes
-    M5.Display.drawLine(center.x - 30, center.y, center.x + 30, center.y, TFT_DARKGREY);
-    M5.Display.drawLine(center.x, center.y - 30, center.x, center.y + 30, TFT_DARKGREY);
-    M5.Display.fillCircle(center.x, center.y, 3, TFT_RED);
+    M5.Display.drawLine(center.x - 80, center.y, center.x + 80, center.y, TFT_DARKGREY);
+    M5.Display.drawLine(center.x, center.y - 80, center.x, center.y + 80, TFT_DARKGREY);
+    M5.Display.fillCircle(center.x, center.y, 6, TFT_RED);
     
     // Draw original rectangle
     for (int i = 0; i < 4; i++) {
         int next = (i + 1) % 4;
-        M5.Display.drawLine(corners[i].x, corners[i].y, corners[next].x, corners[next].y, TFT_DARKBLUE);
+        M5.Display.drawLine(corners[i].x, corners[i].y, corners[next].x, corners[next].y, TFT_NAVY);
     }
     
     // Draw rotated rectangle
@@ -289,7 +327,7 @@ void drawScalingDemo() {
     // Draw original
     for (int i = 0; i < 4; i++) {
         int next = (i + 1) % 4;
-        M5.Display.drawLine(rect[i].x, rect[i].y, rect[next].x, rect[next].y, TFT_DARKBLUE);
+        M5.Display.drawLine(rect[i].x, rect[i].y, rect[next].x, rect[next].y, TFT_NAVY);
     }
     
     // Draw scaled versions
@@ -311,7 +349,7 @@ void drawScalingDemo() {
     // Original
     for (int i = 0; i < 4; i++) {
         int next = (i + 1) % 4;
-        M5.Display.drawLine(shape2[i].x, shape2[i].y, shape2[next].x, shape2[next].y, TFT_DARKBLUE);
+        M5.Display.drawLine(shape2[i].x, shape2[i].y, shape2[next].x, shape2[next].y, TFT_NAVY);
     }
     
     // Non-uniform scaled
@@ -423,7 +461,7 @@ void drawTranslationDemo() {
         float t = i * PI / 180;
         float lx = lissCenter.x + 40 * sin(3 * t);
         float ly = lissCenter.y + 30 * sin(2 * t);
-        M5.Display.drawPixel(lx, ly, TFT_DARKBLUE);
+        M5.Display.drawPixel(lx, ly, TFT_NAVY);
     }
     
     // Current position on curve
@@ -860,7 +898,7 @@ void drawMatrixOperationsDemo() {
     for (int i = 0; i < 4; i++) {
         int next = (i + 1) % 4;
         M5.Display.drawLine(center.x + square[i].x, center.y + square[i].y,
-                           center.x + square[next].x, center.y + square[next].y, TFT_DARKBLUE);
+                           center.x + square[next].x, center.y + square[next].y, TFT_NAVY);
     }
     
     // Performance comparison
@@ -883,7 +921,40 @@ void drawMatrixOperationsDemo() {
 void loop() {
     M5.update();
     
-    // Handle button presses
+    // Handle touch input
+    if (M5.Touch.isEnabled()) {
+        auto touch = M5.Touch.getDetail();
+        if (touch.wasPressed()) {
+            int btnWidth = 200;
+            int btnHeight = 60;
+            int btnY = M5.Display.height() - 80;
+            int spacing = 50;
+            int totalWidth = btnWidth * 3 + spacing * 2;
+            int startX = (M5.Display.width() - totalWidth) / 2;
+            
+            // Check which button was pressed
+            if (touch.y >= btnY && touch.y <= btnY + btnHeight) {
+                if (touch.x >= startX && touch.x <= startX + btnWidth) {
+                    // Previous button
+                    currentDemo = (TransformDemo)((currentDemo - 1 + TRANSFORM_DEMO_COUNT) % TRANSFORM_DEMO_COUNT);
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + btnWidth + spacing && 
+                          touch.x <= startX + btnWidth + spacing + btnWidth) {
+                    // Reset button
+                    animationStep = 0;
+                    animationAngle = 0;
+                    displayCurrentDemo();
+                } else if (touch.x >= startX + (btnWidth + spacing) * 2 && 
+                          touch.x <= startX + (btnWidth + spacing) * 2 + btnWidth) {
+                    // Next button
+                    currentDemo = (TransformDemo)((currentDemo + 1) % TRANSFORM_DEMO_COUNT);
+                    displayCurrentDemo();
+                }
+            }
+        }
+    }
+    
+    // Also handle physical buttons if available
     if (M5.BtnA.wasPressed()) {
         currentDemo = (TransformDemo)((currentDemo - 1 + TRANSFORM_DEMO_COUNT) % TRANSFORM_DEMO_COUNT);
         displayCurrentDemo();

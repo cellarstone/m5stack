@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.m5stack.com)",
+      "WebSearch",
+      "Read(//c/Users/lukas/Projects/Github/cellarstone/m5stack/m5core_ink/1_temp_hum/src/**)",
+      "Read(//c/Users/lukas/Projects/Github/cellarstone/m5stack/m5core_ink/1_temp_hum/**)",
+      "Read(//c/Users/lukas/Projects/Github/cellarstone/m5stack/m5paper_v1.1/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
