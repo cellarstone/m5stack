@@ -28,6 +28,10 @@ bool wifiConnected = false;
 bool mqttConnected = false;
 unsigned long lastMqttPublish = 0;
 unsigned long lastMqttReconnect = 0;
+unsigned long lastWifiCheck = 0;
+unsigned long lastMqttCheck = 0;
+const unsigned long WIFI_CHECK_INTERVAL = 30000;  // Check WiFi every 30 seconds
+const unsigned long MQTT_CHECK_INTERVAL = 30000;  // Check MQTT every 30 seconds
 
 // M5CoreInk Port A (Grove) pins
 const int PortA_SDA = 32;  // Yellow wire
@@ -65,7 +69,41 @@ void setupWiFi() {
         Serial.print("IP address: ");
         Serial.println(WiFi.localIP());
     } else {
+        wifiConnected = false;
         Serial.println("\nWiFi connection failed!");
+    }
+}
+
+void checkWiFiConnection() {
+    if (millis() - lastWifiCheck < WIFI_CHECK_INTERVAL) return;
+    lastWifiCheck = millis();
+    
+    if (WiFi.status() != WL_CONNECTED) {
+        wifiConnected = false;
+        mqttConnected = false;  // If WiFi is down, MQTT is also down
+        Serial.println("WiFi disconnected! Attempting to reconnect...");
+        
+        WiFi.disconnect();
+        delay(1000);
+        WiFi.begin(ssid, password);
+        
+        int attempts = 0;
+        while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+            delay(500);
+            Serial.print(".");
+            attempts++;
+        }
+        
+        if (WiFi.status() == WL_CONNECTED) {
+            wifiConnected = true;
+            Serial.println("\nWiFi reconnected!");
+            Serial.print("IP address: ");
+            Serial.println(WiFi.localIP());
+        } else {
+            Serial.println("\nWiFi reconnection failed!");
+        }
+    } else {
+        wifiConnected = true;
     }
 }
 
@@ -151,8 +189,30 @@ void publishDiscovery() {
     }
 }
 
+void checkMQTTConnection() {
+    if (!wifiConnected) {
+        mqttConnected = false;
+        return;
+    }
+    
+    // Periodically check if MQTT is really connected
+    if (millis() - lastMqttCheck > MQTT_CHECK_INTERVAL) {
+        lastMqttCheck = millis();
+        if (!mqttClient.connected()) {
+            mqttConnected = false;
+            Serial.println("MQTT connection lost!");
+        }
+    }
+}
+
 void connectMQTT() {
     if (!wifiConnected || millis() - lastMqttReconnect < 5000) return;
+    
+    // Double-check MQTT is not already connected
+    if (mqttClient.connected()) {
+        mqttConnected = true;
+        return;
+    }
     
     lastMqttReconnect = millis();
     
@@ -191,13 +251,14 @@ void connectMQTT() {
 }
 
 void publishSensorData() {
-    if (!mqttConnected || millis() - lastMqttPublish < 5000) return;
+    // Check both flag and actual connection state
+    if (!mqttConnected || !mqttClient.connected() || millis() - lastMqttPublish < 5000) return;
     
     lastMqttPublish = millis();
     
     JsonDocument doc;
     doc["temperature"] = lastTemperature;
-    doc["humidity"] = lastHumidity;
+    doc["humidity"] = round(lastHumidity);
     doc["co2"] = lastCO2;
     
     char payload[256];
@@ -208,6 +269,10 @@ void publishSensorData() {
     
     if (mqttClient.publish(topic, payload)) {
         Serial.printf("Published to %s: %s\n", topic, payload);
+    } else {
+        Serial.println("Failed to publish sensor data!");
+        // Force reconnection on next loop
+        mqttConnected = false;
     }
 }
 
@@ -391,9 +456,15 @@ void loop() {
     uint16_t error;
     char errorMessage[256];
     
-    // Handle MQTT connection
+    // Check WiFi connection periodically
+    checkWiFiConnection();
+    
+    // Check and handle MQTT connection
     if (wifiConnected) {
-        if (!mqttConnected) {
+        checkMQTTConnection();  // Check if MQTT is really connected
+        
+        if (!mqttConnected || !mqttClient.connected()) {
+            mqttConnected = false;
             connectMQTT();
         } else {
             mqttClient.loop();
@@ -554,7 +625,7 @@ void loop() {
         // Humidity - Top right quadrant  
         InkPageSprite.drawString(130, 5, "HUM", &AsciiFont8x16);
         char humStr[10];
-        snprintf(humStr, sizeof(humStr), "%.0f", humidity);  // No decimal for larger display
+        snprintf(humStr, sizeof(humStr), "%d", (int)round(humidity));  // Whole number
         int humX = 150 - (strlen(humStr) * 24) / 2;  // Center in right half
         InkPageSprite.drawString(humX, 35, humStr, &AsciiFont24x48);
         InkPageSprite.drawString(170, 50, "%", &AsciiFont8x16);
